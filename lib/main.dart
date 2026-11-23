@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 void main() {
   runApp(const SitaguLibraryApp());
@@ -62,7 +63,7 @@ class LibraryHomePage extends StatelessWidget {
                     Color(0xFF174B3A),
                     Color(0xFF26745A),
                   ],
-                ),
+                  ),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Column(
@@ -237,86 +238,94 @@ class CategoryBooksPage extends StatelessWidget {
   });
 
   List<Map<String, String>> get books {
-    switch (title) {
-      case 'Pali Books':
-        return [
-          {
-            'name': 'Dhammapada',
-            'author': 'Buddha',
-            'type': 'Pali Literature',
-          },
-          {
-            'name': 'Visuddhimagga',
-            'author': 'Bhadantacariya Buddhaghosa',
-            'type': 'Pali Literature',
-          },
-          {
-            'name': 'Mahāparinibbāna Sutta',
-            'author': 'Dīgha Nikāya',
-            'type': 'Sutta',
-          },
-        ];
+    
+switch (title) {
+  case 'Pali Books':
+    return [
+      {
+        'name': 'Mahāsamaya Sutta',
+        'author': 'Dīgha Nikāya',
+        'type': 'Pāli Sutta',
+        'pdfUrl':
+            'https://kwtjuwkbdlyewhnorizp.supabase.co/storage/v1/object/public/books/Mahasamaya_Sutta_Pali.pdf',
+      },
+      {
+        'name': 'Dhammapada',
+        'author': 'Buddha',
+        'type': 'Pali Literature',
+      },
+      {
+        'name': 'Visuddhimagga',
+        'author': 'Bhadantacariya Buddhaghosa',
+        'type': 'Pali Literature',
+      },
+      {
+        'name': 'Mahāparinibbāna Sutta',
+        'author': 'Dīgha Nikāya',
+        'type': 'Sutta',
+      },
+    ];
 
-      case 'Buddhist Studies':
-        return [
-          {
-            'name': 'What the Buddha Taught',
-            'author': 'Walpola Rahula',
-            'type': 'Buddhist Studies',
-          },
-          {
-            'name': 'The Noble Eightfold Path',
-            'author': 'Bhikkhu Bodhi',
-            'type': 'Buddhist Studies',
-          },
-          {
-            'name': 'The Life of the Buddha',
-            'author': 'Bhikkhu Ñāṇamoli',
-            'type': 'Buddhist Studies',
-          },
-        ];
+  case 'Buddhist Studies':
+    return [
+      {
+        'name': 'What the Buddha Taught',
+        'author': 'Walpola Rahula',
+        'type': 'Buddhist Studies',
+      },
+      {
+        'name': 'The Noble Eightfold Path',
+        'author': 'Bhikkhu Bodhi',
+        'type': 'Buddhist Studies',
+      },
+      {
+        'name': 'The Life of the Buddha',
+        'author': 'Bhikkhu Ñāṇamoli',
+        'type': 'Buddhist Studies',
+      },
+    ];
 
-      case 'English Books':
-        return [
-          {
-            'name': 'Basic English Grammar',
-            'author': 'Betty Schrampfer Azar',
-            'type': 'English Learning',
-          },
-          {
-            'name': 'English Vocabulary',
-            'author': 'Sample Collection',
-            'type': 'Vocabulary',
-          },
-          {
-            'name': 'English Reading Practice',
-            'author': 'Sample Collection',
-            'type': 'Reading',
-          },
-        ];
+  case 'English Books':
+    return [
+      {
+        'name': 'Basic English Grammar',
+        'author': 'Betty Schrampfer Azar',
+        'type': 'English Learning',
+      },
+      {
+        'name': 'English Vocabulary',
+        'author': 'Sample Collection',
+        'type': 'Vocabulary',
+      },
+      {
+        'name': 'English Reading Practice',
+        'author': 'Sample Collection',
+        'type': 'Reading',
+      },
+    ];
 
-      case 'Research Papers':
-        return [
-          {
-            'name': 'A Study of Buddhist Philosophy',
-            'author': 'Sample Research',
-            'type': 'Research Paper',
-          },
-          {
-            'name': 'An Analytical Study of Sīla',
-            'author': 'Sample Research',
-            'type': 'Research Paper',
-          },
-          {
-            'name': 'The Importance of Pali Literature',
-            'author': 'Sample Research',
-            'type': 'Research Paper',
-          },
-        ];
+  case 'Research Papers':
+    return [
+      {
+        'name': 'A Study of Buddhist Philosophy',
+        'author': 'Sample Research',
+        'type': 'Research Paper',
+      },
+      {
+        'name': 'An Analytical Study of Sīla',
+        'author': 'Sample Research',
+        'type': 'Research Paper',
+      },
+      {
+        'name': 'The Importance of Pali Literature',
+        'author': 'Sample Research',
+        'type': 'Research Paper',
+      },
+    ];
 
-      default:
-        return [];
-    }
+  default:
+    return [];
+}
   }
 
   @override
@@ -439,7 +448,7 @@ class CategoryCard extends StatelessWidget {
               ),
             );
           },
-          child: Padding(
+          child:Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -480,6 +489,7 @@ class BookDetailPage extends StatelessWidget {
     final name = book['name'] ?? 'Unknown Book';
     final author = book['author'] ?? 'Unknown Author';
     final type = book['type'] ?? 'Not specified';
+    final pdfUrl = book['pdfUrl'];
 
     return Scaffold(
       appBar: AppBar(
@@ -549,37 +559,72 @@ class BookDetailPage extends StatelessWidget {
                 height: 1.7,
               ),
             ),
+
             const SizedBox(height: 25),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE4F0E9),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.picture_as_pdf,
-                    size: 42,
-                    color: Color(0xFF26745A),
+            if (pdfUrl != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF174B3A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'PDF Book',
+                  icon: const Icon(Icons.picture_as_pdf, size: 25),
+                  label: const Text(
+                    'Read PDF',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 6),
-                  Text(
-                    'PDF file will be available soon.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PdfReaderPage(
+                          pdfUrl: pdfUrl,
+                          bookName: name,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE4F0E9),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.picture_as_pdf,
+                      size: 42,
+                      color: Color(0xFF26745A),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'PDF Book',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'PDF file will be available soon.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -606,6 +651,34 @@ class BookDetailPage extends StatelessWidget {
             child: Text(value),
           ),
         ],
+      ),
+    );
+  }
+}
+class PdfReaderPage extends StatelessWidget {
+  final String pdfUrl;
+  final String bookName;
+
+  const PdfReaderPage({
+    super.key,
+    required this.pdfUrl,
+    required this.bookName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF174B3A),
+        foregroundColor: Colors.white,
+        title: Text(
+          bookName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: PdfViewer.uri(
+        Uri.parse(pdfUrl),
       ),
     );
   }
