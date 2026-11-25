@@ -1,8 +1,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://kwtjuwkbdlyewhnorizp.supabase.co',
+    publishableKey: 'sb_publishable_i12wCIn739J8rs0TCx-PAg_MYap-yBY',
+  );
+
   runApp(const SitaguLibraryApp());
 }
 
@@ -228,8 +236,7 @@ class LibraryHomePage extends StatelessWidget {
   }
 }
 
-
-class CategoryBooksPage extends StatelessWidget {
+class CategoryBooksPage extends StatefulWidget {
   final String title;
 
   const CategoryBooksPage({
@@ -237,95 +244,37 @@ class CategoryBooksPage extends StatelessWidget {
     required this.title,
   });
 
-  List<Map<String, String>> get books {
-    
-switch (title) {
-  case 'Pali Books':
-    return [
-      {
-        'name': 'Mahāsamaya Sutta',
-        'author': 'Dīgha Nikāya',
-        'type': 'Pāli Sutta',
-        'pdfUrl':
-            'https://kwtjuwkbdlyewhnorizp.supabase.co/storage/v1/object/public/books/Mahasamaya_Sutta_Pali.pdf',
-      },
-      {
-        'name': 'Dhammapada',
-        'author': 'Buddha',
-        'type': 'Pali Literature',
-      },
-      {
-        'name': 'Visuddhimagga',
-        'author': 'Bhadantacariya Buddhaghosa',
-        'type': 'Pali Literature',
-      },
-      {
-        'name': 'Mahāparinibbāna Sutta',
-        'author': 'Dīgha Nikāya',
-        'type': 'Sutta',
-      },
-    ];
-
-  case 'Buddhist Studies':
-    return [
-      {
-        'name': 'What the Buddha Taught',
-        'author': 'Walpola Rahula',
-        'type': 'Buddhist Studies',
-      },
-      {
-        'name': 'The Noble Eightfold Path',
-        'author': 'Bhikkhu Bodhi',
-        'type': 'Buddhist Studies',
-      },
-      {
-        'name': 'The Life of the Buddha',
-        'author': 'Bhikkhu Ñāṇamoli',
-        'type': 'Buddhist Studies',
-      },
-    ];
-
-  case 'English Books':
-    return [
-      {
-        'name': 'Basic English Grammar',
-        'author': 'Betty Schrampfer Azar',
-        'type': 'English Learning',
-      },
-      {
-        'name': 'English Vocabulary',
-        'author': 'Sample Collection',
-        'type': 'Vocabulary',
-      },
-      {
-        'name': 'English Reading Practice',
-        'author': 'Sample Collection',
-        'type': 'Reading',
-      },
-    ];
-
-  case 'Research Papers':
-    return [
-      {
-        'name': 'A Study of Buddhist Philosophy',
-        'author': 'Sample Research',
-        'type': 'Research Paper',
-      },
-      {
-        'name': 'An Analytical Study of Sīla',
-        'author': 'Sample Research',
-        'type': 'Research Paper',
-      },
-      {
-        'name': 'The Importance of Pali Literature',
-        'author': 'Sample Research',
-        'type': 'Research Paper',
-      },
-    ];
-
-  default:
-    return [];
+  @override
+  State<CategoryBooksPage> createState() =>
+      _CategoryBooksPageState();
 }
+
+class _CategoryBooksPageState extends State<CategoryBooksPage> {
+  late Future<List<Map<String, String>>> _booksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _booksFuture = _loadBooks();
+  }
+
+  Future<List<Map<String, String>>> _loadBooks() async {
+    final response = await Supabase.instance.client
+        .from('books')
+        .select()
+        .eq('category', widget.title)
+        .eq('is_published', true)
+        .order('created_at', ascending: false);
+
+    return response.map<Map<String, String>>((book) {
+      return {
+        'name': (book['title'] ?? 'Untitled').toString(),
+        'author': (book['author'] ?? 'Unknown Author').toString(),
+        'type': (book['category'] ?? '').toString(),
+        'pdfUrl': (book['pdf_url'] ?? '').toString(),
+        'description': (book['description'] ?? '').toString(),
+      };
+    }).toList();
   }
 
   @override
@@ -334,88 +283,124 @@ switch (title) {
       appBar: AppBar(
         backgroundColor: const Color(0xFF174B3A),
         foregroundColor: Colors.white,
-        title: Text(title),
+        title: Text(widget.title),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF174B3A),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${books.length} sample books',
-            style: const TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 18),
-
-          ...books.map((book) {
-            return Card(
-              color: Colors.white,
-              elevation: 2,
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => BookDetailPage(
-        book: book,
-      ),
-    ),
-  );
-},
-                contentPadding: const EdgeInsets.all(12),
-                leading: Container(
-                  width: 52,
-                  height: 65,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE4F0E9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child:  Icon(
-                    Icons.menu_book,
-                    size: 32,
-                    color: Color(0xFF26745A),
-                  ),
-                ),
-                title: Text(
-                  book['name']!,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 7),
-                  child: Text(
-                    'Author: ${book['author']!}\n'
-                    'Type: ${book['type']!}',
-                  ),
-                ),
-                isThreeLine: true,
+      body: FutureBuilder<List<Map<String, String>>>(
+        future: _booksFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF26745A),
               ),
             );
-          }),
+          }
 
-          const SizedBox(height: 15),
-          const Center(
-            child: Text(
-              'Sitagu Buddhist Academy Digital Library',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-        ],
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Unable to load books.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          final books = snapshot.data ?? [];
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                widget.title,
+                style: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF174B3A),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${books.length} books',
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 18),
+
+              if (books.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(30),
+                    child: Text('No books available yet.'),
+                  ),
+                ),
+
+              ...books.map((book) {
+                return Card(
+                  color: Colors.white,
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookDetailPage(
+                            book: book,
+                          ),
+                        ),
+                      );
+                    },
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: Container(
+                      width: 52,
+                      height: 65,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE4F0E9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.menu_book,
+                        size: 32,
+                        color: Color(0xFF26745A),
+                      ),
+                    ),
+                    title: Text(
+                      book['name']!,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 7),
+                      child: Text(
+                        'Author: ${book['author']}\n'
+                        'Type: ${book['type']}',
+                      ),
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              }),
+
+              const SizedBox(height: 15),
+              const Center(
+                child: Text(
+                  'Sitagu Buddhist Academy Digital Library',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
+
 class CategoryCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -655,6 +640,7 @@ class BookDetailPage extends StatelessWidget {
     );
   }
 }
+
 class PdfReaderPage extends StatelessWidget {
   final String pdfUrl;
   final String bookName;
