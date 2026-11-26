@@ -50,12 +50,21 @@ class LibraryHomePage extends StatelessWidget {
             fontSize: 17,
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.account_circle_outlined),
-          ),
-        ],
+        
+actions: [
+  IconButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AdminLoginPage(),
+        ),
+      );
+    },
+    icon: const Icon(Icons.account_circle_outlined),
+  ),
+],
+
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
@@ -665,6 +674,195 @@ class PdfReaderPage extends StatelessWidget {
       ),
       body: PdfViewer.uri(
         Uri.parse(pdfUrl),
+      ),
+    );
+  }
+}
+
+
+class AdminLoginPage extends StatefulWidget {
+  const AdminLoginPage({super.key});
+
+  @override
+  State<AdminLoginPage> createState() => _AdminLoginPageState();
+}
+
+class _AdminLoginPageState extends State<AdminLoginPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _loading = false;
+  bool _obscurePassword = true;
+
+  Future<void> _login() async {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password.')),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      await supabase.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      final result = await supabase.rpc('is_admin');
+
+      if (result != true) {
+        await supabase.auth.signOut();
+
+        throw Exception('This account is not an administrator.');
+      }
+
+      if (!mounted) return;
+
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (context) => const AdminDashboardPage(),
+  ),
+);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Login'),
+        backgroundColor: const Color(0xFF174B3A),
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.admin_panel_settings,
+              size: 75,
+              color: Color(0xFF174B3A),
+            ),
+            const SizedBox(height: 25),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Admin Email',
+                prefixIcon: Icon(Icons.email),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 25),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF174B3A),
+                  foregroundColor: Colors.white,
+                ),
+                child: _loading
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                      )
+                    : const Text('LOGIN'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class AdminDashboardPage extends StatelessWidget {
+  const AdminDashboardPage({super.key});
+
+  Future<void> _logout(BuildContext context) async {
+    await Supabase.instance.client.auth.signOut();
+
+    if (!context.mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LibraryHomePage(),
+      ),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Dashboard'),
+        backgroundColor: const Color(0xFF174B3A),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: () => _logout(context),
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+          ),
+        ],
+      ),
+      body: const Center(
+        child: Text(
+          'Welcome to Sitagu Buddhist Academy Digital Library Admin Panel',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
